@@ -1,0 +1,158 @@
+﻿
+@using System.Globalization
+@inject OdersHeaderServices or;
+
+<div class="card">
+    <div class="card-header">
+        <select id="datetext" @onchange="GetSale" class="custom-select-sm">
+            @foreach (var date in DateLists)
+            {
+                <option value="@date.Date">@date.Text</option>
+            }
+        </select>
+    </div>
+    <div class="card-body">
+        <RadzenChart>
+            <RadzenColumnSeries Data="@NetSellbydate" CategoryProperty="Date" Title="@Title" LineType="LineType.Dashed" ValueProperty="NetSell" />
+            @*<RadzenColumnSeries Data="@NetSell" CategoryProperty="Date" Title="2019" ValueProperty="NetSell" />*@
+            <RadzenColumnOptions Radius="5" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Amount in USD" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </div>
+</div>
+@code {
+
+    DateTime? value = DateTime.Now;
+    public string Title { get; set; }
+    public List<DateList> DateLists { get; set; } = new List<DateList>();
+    class DataItem
+    {
+        public string Date { get; set; }
+        public double NetSell { get; set; }
+
+    }
+
+    DataItem[] NetSellbydate;
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+    public List<SalesDashBoardWebApp.Data.Models.OderHeader> oderheaders { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        DateLists = Alldate();
+        TodaysSale();
+    }
+    async void GetSale(ChangeEventArgs e)
+    {
+
+
+        var startdate = DateTime.Now.ToString("yyyy-MM-dd");
+        var enddate = e.Value.ToString();
+
+        oderheaders = await or.GetToadysSale(enddate, startdate);
+        if (oderheaders.Count == 0)
+        {
+            NetSellbydate = new DataItem[]
+            {
+                new DataItem
+                {
+                    Date=value?.ToString("yyyy-MM-dd"),
+                    NetSell=00,
+
+                }
+            };
+            Title = enddate;
+
+
+        }
+        if (oderheaders.Count > 0)
+        {
+            NetSellbydate = new DataItem[]
+            {
+                new DataItem
+                {
+                    Date=value?.ToString("yyyy-MM-dd"),
+                    NetSell=oderheaders.Select(o => o.AmountDue).Sum()
+
+
+                }
+        };
+
+            Title = enddate;
+
+        }
+    }
+
+
+
+    async void TodaysSale()
+    {
+        var startdate = DateTime.Now.ToString("yyyy-MM-dd");
+        var enddate = DateTime.Now.ToString("yyyy-MM-dd");
+        oderheaders = await or.GetToadysSale(enddate, startdate);
+        if (oderheaders.Count == 0)
+        {
+            NetSellbydate = new DataItem[]
+            {
+                new DataItem
+                {
+                    Date=value?.ToString("yyyy-MM-dd"),
+                    NetSell=00,
+
+                }
+            };
+            Title = enddate;
+
+
+        }
+        else
+        {
+            NetSellbydate = new DataItem[]
+                   {
+                new DataItem
+                {
+                    Date=value?.ToString("yyyy-MM-dd"),
+                    NetSell=oderheaders.Select(o => o.AmountDue).Sum(),
+
+
+                }
+           };
+            Title = enddate;
+        }
+
+    }
+    private List<DateList> Alldate()
+    {
+        List<DateList> dateLists = new List<DateList>
+    {
+       new DateList()
+        {
+            Date=DateTime.Now.ToString("yyyy-MM-dd"),
+            Text="TOTAL NET SALES-TODAY "
+        },
+            new DateList()
+        {
+            Date=DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"),
+            Text="TOTAL NET SALES-LAST 7 DAYS "
+        },
+         new DateList()
+        {
+            Date=DateTime.Now.AddDays(-15).ToString("yyyy-MM-dd"),
+            Text="TOTAL NET SALES-LAST 15 DAYS"
+        },
+          new DateList()
+        {
+            Date=DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd"),
+            Text="TOTAL NET SALES-LAST 30 DAYS"
+        }
+
+     };
+        return dateLists;
+    }
+}

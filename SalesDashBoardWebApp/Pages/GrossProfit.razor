@@ -1,0 +1,92 @@
+﻿@page "/a"
+@using System.Globalization
+@inject OdersHeaderServices or;
+
+<div class="card">
+    <div class="card-header">
+        Top Sales in a Week<RadzenDatePicker @bind-Value=@value DateFormat="d" Change=@(args => OnChange(args, "DatePicker", "MM-dd-yyyy")) />
+    </div>
+    <div class="card-body">
+        <RadzenChart>
+            <RadzenColumnSeries Data="@topSalesViewModel" CategoryProperty="MenuTextItem" Title="Top Sales Items" LineType="LineType.Dashed" ValueProperty="SumOfQuantity" />
+            
+            <RadzenColumnOptions Radius="5" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Amount in USD" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </div>
+</div>
+@code {
+
+    public List<SalesDashBoardWebApp.Data.Models.TopSalesViewModel> TopSales { get; set; }
+    DateTime? value = DateTime.Now;
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString()+"Nos";
+    }
+    List<SalesDashBoardWebApp.Data.Models.TopSalesViewModel> topSalesViewModel { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        LastWeek();
+
+    }
+
+    async void OnChange(DateTime? value, string name, string format) {
+
+        var today = value?.ToString(format);
+        var lastsevnday = Convert.ToDateTime(today).AddDays(-7).ToString(format);
+        topSalesViewModel = await or.GetTopSale(today,lastsevnday);
+        if (topSalesViewModel.Count == 0)
+        {
+            topSalesViewModel = new List<TopSalesViewModel>
+            {
+                new TopSalesViewModel
+                {
+                    MenuTextItem="N/A",
+                    SumOfQuantity=0
+                }
+        };
+
+        }
+       
+
+    }
+
+
+    async void LastWeek()
+    {
+        var today = DateTime.Today.ToString("MM-dd-yyyy");
+        var lastsvnday=Convert.ToDateTime(today).AddDays(-7).ToString("MM-dd-yyyy");
+
+        topSalesViewModel = await or.GetTopSale(today,lastsvnday);
+        if (topSalesViewModel.Count == 0)
+        {
+            topSalesViewModel = new List<TopSalesViewModel>
+            {
+                new TopSalesViewModel
+                {
+                    MenuTextItem="N/A",
+                    SumOfQuantity=0
+                }
+        };
+
+        }
+
+
+    }
+
+}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,52 @@
+﻿@using System.Globalization
+@inject OdersHeaderServices odersHeaderServices;
+
+<div class="card">
+    <div class="card-header">
+        Department sales
+    </div>
+    <div class="card-body">
+        <RadzenChart>
+            <RadzenDonutSeries Data="@departmentSales" CategoryProperty="Department" ValueProperty="DepartmentSale">
+                <TitleTemplate>
+                    <div class="rz-donut-content">
+                        <div>Total Of Top 5</div>
+                        <div>@main $</div>
+                    </div>
+                </TitleTemplate>
+
+            </RadzenDonutSeries>
+        </RadzenChart>
+    </div>
+</div>
+
+@code {
+
+    public List<DepartmentSell> departmentSales { get; set; }
+    string main;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Departmentsale();
+    }
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+    async void Departmentsale()
+    {
+        departmentSales = await odersHeaderServices.DepartmentSale();
+
+        main = departmentSales.Select(m => m.DepartmentSale).Sum().ToString("C2");
+        if (departmentSales.Count > 0)
+        {
+            Data.Models.DepartmentSell departmentSales = new Data.Models.DepartmentSell
+            {
+                Department = "N/A",
+                DepartmentSale = 0
+            };
+        }
+
+    }
+}

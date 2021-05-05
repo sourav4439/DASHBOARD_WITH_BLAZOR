@@ -1,0 +1,48 @@
+﻿@using System.Globalization
+@inject OdersHeaderServices odersHeaderServices;
+
+<h1></h1><div class="card">
+    <div class="card-header">
+        HOURLY SALES <RadzenDatePicker @bind-Value=@value DateFormat="d" Change=@(args => OnChange(args, "DatePicker", "yyyy-MM-dd")) />
+
+    </div>
+    <div class="card-body">
+        <label>Smooth <RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox></label>
+        <RadzenChart>
+            <RadzenAreaSeries Smooth="@smooth" Data="@hourlies" CategoryProperty="Hours" Title="@displaydate" ValueProperty="Total" RenderingOrder="1">
+            </RadzenAreaSeries>
+            <RadzenCategoryAxis Padding="20" FormatString="{0:hh}" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Revenue in USD" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </div>
+</div>
+@code {
+    bool smooth = true;
+    DateTime? value = DateTime.Now;
+    string displaydate;
+    public List<HourlySale> hourlies { get; set; }
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        hourlysale();
+    }
+    async void OnChange(DateTime? value, string name, string format)
+    {
+        hourlies = await odersHeaderServices.GetHourlySale(value?.ToString(format));
+        displaydate = value?.ToString(format);
+    }
+    async void hourlysale()
+    {
+        hourlies=await odersHeaderServices.GetHourlySale(DateTime.Today.ToString("yyyy-MM-dd"));
+
+        displaydate = DateTime.Today.ToString("yyyy-MM-dd");
+    }
+}

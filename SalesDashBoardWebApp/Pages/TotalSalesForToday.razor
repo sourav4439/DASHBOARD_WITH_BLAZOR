@@ -1,0 +1,66 @@
+﻿@inject OdersHeaderServices odersHeaderServices;
+<div class="card">
+    <div class="card-header">
+        TOTALS FOR TODAY<RadzenDatePicker @bind-Value=@value DateFormat="d" Change=@(args => OnChange(args, "DatePicker", "yyyy-MM-dd")) />
+    </div>
+    <div class="card-body">
+        Gross Sales :@GrossSales $
+        <hr />
+
+        Net Sales :@GrossSales $
+    <hr />
+        #Transactions :@Transactions $
+    <hr />
+        Average Transaction :@AvgTransactions $
+    </div>
+</div>
+@code {
+    DateTime? value = DateTime.Now;
+    decimal Transactions;
+    string GrossSales;
+    string AvgTransactions ;
+
+    IEnumerable<DateTime> dates = new DateTime[] { DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1) };
+
+    public List<SalesDashBoardWebApp.Data.Models.OderHeader> oderheaders { get; set; }
+
+
+    protected override async Task  OnInitializedAsync()
+    {
+        await  base.OnInitializedAsync();
+        TodaysSale();
+
+    }
+    async void OnChange(DateTime? value, string name, string format)
+    {
+        oderheaders = await odersHeaderServices.GetToadysSale(value?.ToString(format), value?.ToString(format));
+        if (oderheaders.Count>0) {
+            Transactions = oderheaders.Count;
+            GrossSales = oderheaders.Select(o => o.AmountDue).Sum().ToString("C2");
+            AvgTransactions =oderheaders.Select(o => o.AmountDue).Average().ToString("C2");
+        }
+        else
+        {
+            TodaysSale();
+        }
+    }
+
+
+    async void TodaysSale()
+    {
+        oderheaders = await odersHeaderServices.GetToadysSale(value?.ToString("yyyy-MM-dd"), value?.ToString("yyyy-MM-dd"));
+        if (oderheaders.Count == 0)
+        {
+            Transactions = 00;
+            GrossSales = "00";
+            AvgTransactions = "00";
+        }
+        else
+        {
+            Transactions = oderheaders.Count;
+            GrossSales = oderheaders.Select(o => o.AmountDue).Sum().ToString("C2");
+            AvgTransactions = oderheaders.Select(o => o.AmountDue).Average().ToString("C2");
+        }
+    }
+
+}

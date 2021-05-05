@@ -1,0 +1,94 @@
+﻿@using System.Globalization
+@inject OdersHeaderServices odersHeaderServices;
+<div class="card">
+    <div class="card-header">
+       <select id="datetext" @onchange="GetSale" class="custom-select-sm">
+       @foreach (var date in DateLists)
+       {
+           <option value="@date.Date">@date.Text</option>
+       }
+       </select>
+    </div>
+    <div class="card-body">
+        <label>Smooth <RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox></label>
+        <RadzenChart>
+            <RadzenLineSeries Smooth="@smooth" Data="@Salesweeklies" CategoryProperty="Date" Title="@titletxt" LineType="LineType.Dashed" ValueProperty="amount">
+                <RadzenMarkers MarkerType="MarkerType.Square" />
+            </RadzenLineSeries>
+            @*<RadzenLineSeries Smooth="@smooth" Data="@revenue2020" CategoryProperty="Date" Title="2020" ValueProperty="Revenue">
+                    <RadzenMarkers MarkerType="MarkerType.Circle" />
+                </RadzenLineSeries>*@
+            <RadzenCategoryAxis Padding="20" FormatString="{0:MMM}" />
+            <RadzenValueAxis Formatter="@FormatAsUSD">
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Revenue in USD" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </div>
+</div>
+@code {
+    bool smooth = false;
+    public List<DateList> DateLists { get; set; } = new List<DateList>();
+
+    public  DateTime? value { get; set; }
+    string titletxt = "TOTAL SALES";
+
+    string FormatAsUSD(object value)
+    {
+        return ((double)value).ToString("C0", CultureInfo.CreateSpecificCulture("en-US"));
+    }
+
+
+    public List<Salesweekly> Salesweeklies { get; set; }
+
+    protected override async void OnInitialized()
+    {
+        base.OnInitialized();
+        var startdate = value?.ToString("yyyy-MM-dd");
+        var enddate = value?.AddDays(-7).ToString("yyyy-MM-dd");
+        DateLists = Alldate();
+
+
+        Salesweeklies = await odersHeaderServices.GetSaleWeekly(enddate, startdate);
+    }
+    //async void OnChange(DateTime? value, string name, string format)
+    //{
+    //    var startdate = value?.ToString(format);
+    //    var enddate = value?.AddDays(-7).ToString(format);
+    //    Salesweeklies = await odersHeaderServices.GetSaleWeekly(enddate,startdate);
+
+    //}
+    async void GetSale(ChangeEventArgs e)
+    {
+
+
+        var startdate = DateTime.Now.ToString("yyyy-MM-dd");
+        var enddate = e.Value.ToString();
+
+        Salesweeklies = await odersHeaderServices.GetSaleWeekly(enddate, startdate);
+    }
+
+    private List<DateList> Alldate()
+    {
+        List<DateList> dateLists = new List<DateList>
+    {
+        new DateList()
+        {
+            Date=DateTime.Now.AddDays(-7).ToString("yyyy-MM-dd"),
+            Text="Sales Week to Date"
+        },
+         new DateList()
+        {
+            Date=DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd"),
+            Text="Sales Month to Date"
+        },
+          new DateList()
+        {
+            Date=DateTime.Now.AddDays(-365).ToString("yyyy-MM-dd"),
+            Text="Sales Year to Date"
+        }
+
+     };
+        return dateLists;
+    }
+}
